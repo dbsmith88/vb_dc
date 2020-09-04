@@ -1,0 +1,58 @@
+version: '3'
+volumes:
+  postgres-data:
+services:
+
+  django:
+    build:
+      context: vb_django
+      dockerfile: Dockerfile
+    hostname: vb-django
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./vb_django:/opt/app
+    environment:
+      - DASK_SCHEDULER=tcp://dask-scheduler:8786
+      - IN_DOCKER=True
+      - DJANGO_SETTINGS_MODULE=vb_django.settings
+    depends_on:
+      - dask-scheduler
+      - db
+
+  db:
+    image: postgres
+    hostname: postgres
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_DB=vb_postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  dask-scheduler:
+    build:
+      context: vb_dask
+      dockerfile: Dockerfile
+    hostname: dask-scheduler
+    expose:
+      - "8786"
+    ports:
+      - "8787:8787"
+    command: dask-scheduler
+
+  dask-worker:
+    build:
+      context: vb_dask
+      dockerfile: Dockerfile
+    hostname: dask-worker
+    volumes:
+      - ./vb_django:/app
+    environment:
+      - DASK_SCHEDULE=dask-scheduler:8786
+      - IN_DOCKER=true
+    command: dask-worker dask-scheduler:8786
+    depends_on:
+      - dask-scheduler
