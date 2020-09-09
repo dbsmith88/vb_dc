@@ -18,9 +18,9 @@ services:
       - DJANGO_SETTINGS_MODULE=vb_django.settings
     depends_on:
       - dask-scheduler
-      - db
+      - postgres
 
-  db:
+  postgres:
     image: postgres
     hostname: postgres
     expose:
