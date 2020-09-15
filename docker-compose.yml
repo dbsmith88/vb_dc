@@ -4,23 +4,22 @@ volumes:
 services:
 
   django:
-    build:
-      context: vb_django
-      dockerfile: Dockerfile
+    image: quanted/vb_django:latest
     hostname: vb-django
     ports:
       - "8080:8080"
+    command: sh /opt/app/vb_django/start-server.sh
     volumes:
-      - ./vb_django:/opt/app
+      - ./vb_django:/opt/app/vb_django
     environment:
       - DASK_SCHEDULER=tcp://dask-scheduler:8786
       - IN_DOCKER=True
       - DJANGO_SETTINGS_MODULE=vb_django.settings
     depends_on:
       - dask-scheduler
-      - db
+      - postgres
 
-  db:
+  postgres:
     image: postgres
     hostname: postgres
     expose:
@@ -33,9 +32,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
 
   dask-scheduler:
-    build:
-      context: vb_dask
-      dockerfile: Dockerfile
+    image: quanted/vb_dask:latest
     hostname: dask-scheduler
     expose:
       - "8786"
@@ -44,9 +41,7 @@ services:
     command: dask-scheduler
 
   dask-worker:
-    build:
-      context: vb_dask
-      dockerfile: Dockerfile
+    image: quanted/vb_dask:latest
     hostname: dask-worker
     volumes:
       - ./vb_django:/app
